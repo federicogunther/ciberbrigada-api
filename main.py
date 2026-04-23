@@ -505,3 +505,22 @@ def _run_exiftool(path: str):
         return {"error": "ExifTool no instalado"}
     except Exception as e:
         return {"error": str(e)}
+
+# ─────────────────────────────────────────────
+# EXIFTOOL - from file upload
+# ─────────────────────────────────────────────
+from fastapi import UploadFile, File
+
+@app.post("/api/image/exif-upload")
+async def exif_from_upload(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        suffix = '.' + (file.filename.split('.')[-1] if '.' in file.filename else 'jpg')
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(contents)
+            tmp_path = tmp.name
+        result = await asyncio.get_event_loop().run_in_executor(None, _run_exiftool, tmp_path)
+        os.unlink(tmp_path)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
