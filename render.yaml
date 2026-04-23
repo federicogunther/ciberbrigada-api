@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ciberbrigada-api
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      apt-get install -y exiftool || true
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: HIBP_API_KEY
+        value: ""
+      - key: IPINFO_TOKEN
+        value: ""
+      - key: ABUSEIPDB_KEY
+        value: ""

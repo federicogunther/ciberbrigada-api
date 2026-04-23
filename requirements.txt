@@ -1,0 +1,8 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+httpx==0.25.2
+python-multipart==0.0.6
+sherlock-project==0.14.3
+holehe==1.62
+maigret==0.4.4
+phoneinfoga==2.11.0
