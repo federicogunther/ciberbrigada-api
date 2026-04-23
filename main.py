@@ -31,6 +31,19 @@ def root():
 def health():
     return {"status": "ok"}
 
+@app.get("/api/tools/check")
+def check_tools():
+    tools = {}
+    for tool in ["sherlock", "holehe", "phoneinfoga", "exiftool"]:
+        try:
+            r = subprocess.run([tool, "--help"], capture_output=True, timeout=5)
+            tools[tool] = "disponible"
+        except FileNotFoundError:
+            tools[tool] = "no instalado"
+        except:
+            tools[tool] = "instalado (error menor)"
+    return {"tools": tools}
+
 # ─────────────────────────────────────────────
 # EMAIL - HaveIBeenPwned
 # ─────────────────────────────────────────────
@@ -282,26 +295,33 @@ async def sherlock_search(username: str):
 
 def _run_sherlock(username: str):
     try:
-        r = subprocess.run(
+        # Try multiple ways to call sherlock
+        for cmd in [
+            ["sherlock", username, "--print-found", "--timeout", "10"],
             ["python3", "-m", "sherlock", username, "--print-found", "--timeout", "10"],
-            capture_output=True, text=True, timeout=55
-        )
-        found = []
-        for line in r.stdout.splitlines():
-            if line.startswith("[+]"):
-                url = line.replace("[+]", "").strip()
-                found.append(url)
-        return {
-            "found": len(found) > 0,
-            "username": username,
-            "count": len(found),
-            "sites": found,
-            "tool": "sherlock"
-        }
-    except FileNotFoundError:
-        return {"error": "Sherlock no instalado", "command": f"python3 -m sherlock {username}"}
-    except subprocess.TimeoutExpired:
-        return {"error": "Timeout", "command": f"python3 -m sherlock {username}"}
+            ["python3", "-c", f"from sherlock_project.sherlock import sherlock; print('ok')"],
+        ]:
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=55)
+                if r.returncode == 0 or "[+]" in r.stdout:
+                    found = []
+                    for line in r.stdout.splitlines():
+                        if line.startswith("[+]"):
+                            url = line.replace("[+]", "").strip()
+                            if url:
+                                found.append(url)
+                    return {
+                        "found": len(found) > 0,
+                        "username": username,
+                        "count": len(found),
+                        "sites": found,
+                        "tool": "sherlock"
+                    }
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+        return {"error": "Sherlock no disponible en este servidor", "command": f"sherlock {username}"}
+    except Exception as e:
+        return {"error": str(e), "command": f"sherlock {username}"}
 
 # ─────────────────────────────────────────────
 # HOLEHE - email to social accounts
