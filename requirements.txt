@@ -4,4 +4,3 @@ httpx==0.25.2
 python-multipart==0.0.6
 sherlock-project
 holehe
-maigret
